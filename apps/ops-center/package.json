@@ -1,0 +1,23 @@
+{
+  "name": "@heirloom/ops-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "备份编排与演练中心：定时备份、完整性校验、隔离环境还原比对、可追溯报告",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ops-center": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,23 @@
+# 备份编排与演练中心（定时备份 + 每日校验 + 每月演练 + 只读面板）
+# 与主应用分开托管：主应用升级/重启不影响备份节奏，反之亦然。
+[Unit]
+Description=家中物品来历册 · 备份编排与演练中心
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=heirloom
+WorkingDirectory=/srv/heirloom
+EnvironmentFile=/srv/heirloom/.env
+# 客户端工具不在 PATH 时在 .env 里设 PG_BIN_PATH
+ExecStart=/usr/bin/node apps/ops-center/dist/index.js daemon
+Restart=always
+RestartSec=10
+# 账本/备份只追加与读，不需要更大权限
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

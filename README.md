@@ -51,6 +51,7 @@
 | 分享 | 生成带有效期与可选密码的只读链接，可随时撤销，访问计数 |
 | 导出 | 单条 Markdown、打印视图（存 PDF）、全量 ZIP（`manifest.json` + `items.csv` + 每人条目 Markdown + 原始媒体 + sha256 清单） |
 | 运维 | 单进程同时提供前端与 API、健康检查、每日维护任务（回收站清理/孤儿文件回收）、备份 + 恢复脚本 + 恢复演练报告 |
+| 备份中心 | 守护进程定时备份/校验/演练、隔离环境自动还原与全表指纹比对、位腐检测、append-only 哈希链账本、只读状态面板与可追溯报告（见 [apps/ops-center](apps/ops-center/README.md)） |
 
 ## 技术栈
 
@@ -131,7 +132,8 @@ pnpm dev                        # api:4000 + web:5173（Vite 代理 /api 到 400
 | `pnpm test:ui` | **浏览器冒烟测试**（用本机 Chrome 真实点一遍） |
 | `pnpm db:init` / `db:start` / `db:stop` / `db:status` / `db:psql` | 管理项目自带的 PostgreSQL 集群 |
 | `pnpm db:studio` | Prisma Studio 可视化查库 |
-| `pnpm backup` / `pnpm restore <目录>` / `pnpm backup:drill` / `pnpm gc` | 备份 / 恢复 / 恢复演练 / 维护任务 |
+| `pnpm backup` / `pnpm restore <目录>` / `pnpm backup:drill` / `pnpm gc` | 备份 / 恢复 / 恢复演练 / 维护任务（手工脚本） |
+| `pnpm ops:daemon` / `ops:backup` / `ops:verify` / `ops:drill` / `ops:audit` | 备份编排与演练中心：定时调度 / 立即备份 / 完整性校验 / 隔离演练 / 账本防篡改审计 |
 
 ## 怎么验证它真的能用
 
@@ -170,6 +172,30 @@ pnpm backup:drill   # 还原到临时库并比对条数与媒体 sha256，输出
 报告写在 `docs/恢复演练报告-<时间>.md`，包含条数比对表、媒体抽样校验结果和备份文件清单。**只有演练通过，备份才算数。**
 
 > 演练会用 `createdb` 建一个临时库，因此数据库账号需要有 `CREATEDB` 权限。项目自带的本地集群默认满足；用托管数据库时如果没有该权限，可以手动指定一个演练库后跳过建库步骤，或改用 `pnpm restore` 做一次真实恢复验证。
+
+### 备份编排与演练中心（推荐常驻）
+
+手工脚本解决「能不能恢复」，编排中心再解决「有没有人按时做、做完能不能查证」：
+
+```bash
+pnpm ops:build       # 构建（pnpm build 已包含）
+pnpm ops:daemon      # 常驻：每天 02:30 备份、04:00 校验、每月 1 号 03:00 隔离演练
+```
+
+它在手工脚本之上多做了四件事：
+
+1. **定时调度**：内置 cron（按 `TZ` 解释），错过窗口重启后自动补跑，同任务重叠自动跳过。
+2. **隔离演练升级**：还原到独立临时库后，对 16 张业务表做**行数 + 全行内容 md5 指纹**双重比对，
+   媒体做「生产磁盘 / 恢复库记录 / 归档解压实算」三方 sha256 比对；生产连接强制只读，
+   临时库与沙箱目录演练后自动销毁。
+3. **位腐检测**：每日 `verify` 重算备份文件 sha256 对清单、验证 dump 可解析与 tar CRC，
+   并抽样核对生产磁盘上的媒体哈希。
+4. **可追溯**：所有操作进 append-only 的哈希链账本（`data/ops-center/ledger.ndjson`），
+   每次运行产出 Markdown/JSON 报告（`data/ops-center/reports/`），`pnpm ops:audit` 可检出任何删改；
+   另有本机只读面板 `http://127.0.0.1:4097/` 查看最近运行与下一次计划。
+
+备份产物与手工脚本完全互通（同目录、同 `DONE` 约定，manifest v1/v2 都认）。
+完整说明见 [`apps/ops-center/README.md`](apps/ops-center/README.md)。
 
 ## 生产部署
 
@@ -326,6 +352,7 @@ API 进程每天也会自动跑一次同样的维护任务。
 ```
 .
 ├── scripts/                     # 本地数据库 / 备份 / 恢复 / 演练 / 清理 / 闭环验证
+├── apps/ops-center/             # 备份编排与演练中心（定时调度 / 隔离演练 / 哈希链账本 / 状态面板）
 ├── e2e/ui-smoke.mjs             # 浏览器冒烟测试
 ├── packages/shared/             # 前后端共用的权限矩阵、时间精度、Zod 校验
 ├── apps/api/
