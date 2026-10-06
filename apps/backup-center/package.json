@@ -1,0 +1,28 @@
+{
+  "name": "@heirloom/backup-center",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "backup-center": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js run",
+    "dev": "tsx src/index.ts run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "embedded-postgres": "18.4.0-beta.17",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

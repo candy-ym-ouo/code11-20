@@ -132,6 +132,7 @@ pnpm dev                        # api:4000 + web:5173（Vite 代理 /api 到 400
 | `pnpm db:init` / `db:start` / `db:stop` / `db:status` / `db:psql` | 管理项目自带的 PostgreSQL 集群 |
 | `pnpm db:studio` | Prisma Studio 可视化查库 |
 | `pnpm backup` / `pnpm restore <目录>` / `pnpm backup:drill` / `pnpm gc` | 备份 / 恢复 / 恢复演练 / 维护任务 |
+| `pnpm center:onboard` / `center:run` / `center:daemon` / `center:demo` | **备份编排与演练中心**：定时备份+校验、隔离沙箱还原比对、哈希链证据、看板 |
 
 ## 怎么验证它真的能用
 
@@ -270,6 +271,25 @@ data/backups/2026-10-05-023000/
 ```
 
 用托管数据库时，把 `DATABASE_URL` 指向该库即可，脚本走的是标准 `pg_dump`；媒体目录仍需自己纳入备份（脚本已包含）。
+
+### 备份编排与演练中心（常态化、可追溯）
+
+上面的脚本适合人工跑；**定时执行 + 自动校验 + 隔离还原比对 + 可追溯报告**由编排中心承担（详见 [`apps/backup-center/README.md`](apps/backup-center/README.md)）：
+
+```bash
+pnpm center:onboard     # 从 .env 注册数据库/媒体目标 + 默认计划（每天 02:30 备份、周一 04:00 演练）
+pnpm center:run         # 立即一轮：备份 → 完整性校验 → 还原到嵌入式隔离库 → 逐表 sha256 比对
+pnpm center:daemon      # 常驻调度 + 看板 http://127.0.0.1:4090
+pnpm center:demo        # 没有可用数据库时的自包含演示（临时内嵌 PostgreSQL + 示例媒体）
+```
+
+它与手工脚本的关键区别：
+
+- **沙箱是真隔离**：演练在独立数据目录、随机端口、只绑 127.0.0.1 的嵌入式 PostgreSQL 集群里还原，结束即删除，绝不碰生产库。
+- **比对到行内容**：不只比条数，还逐表算规范化行内容的 sha256；备份之后源端的正常写入在报告中标为「漂移警告」而非误报损坏。
+- **证据可追溯、防篡改**：每次运行一条 SHA-256 哈希链事件日志（`events.jsonl`），备份以 `DONE`（= manifest 哈希）作为完整性凭证，全部产物与 Markdown 报告落在 `data/backup-center/runs/<runId>/`。
+- **媒体备份零系统依赖**：自带 ustar+gzip 打包器（中文文件名、路径穿越防护均有测试）。
+- `pnpm --filter @heirloom/backup-center test` 含 16 项测试，其中端到端用真实嵌入式 PostgreSQL 跑通全链。
 
 ### 恢复
 

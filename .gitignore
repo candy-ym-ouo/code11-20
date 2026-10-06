@@ -8,6 +8,8 @@ build/
 coverage/
 .DS_Store
 data/
+# backup-center 免安装的 PostgreSQL 客户端二进制（按平台从官方 deb 解压，不入库）
+tools/
 .vite/
 test-results/
 playwright-report/

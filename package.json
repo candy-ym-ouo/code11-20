@@ -9,10 +9,10 @@
   },
   "scripts": {
     "dev": "pnpm --parallel --filter @heirloom/api --filter @heirloom/web dev",
-    "build": "pnpm --filter @heirloom/shared build && pnpm --filter @heirloom/api build && pnpm --filter @heirloom/web build",
+    "build": "pnpm --filter @heirloom/shared build && pnpm --filter @heirloom/api build && pnpm --filter @heirloom/web build && pnpm --filter @heirloom/backup-center build",
     "start": "node apps/api/dist/index.js",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @heirloom/shared test && pnpm --filter @heirloom/api test",
+    "test": "pnpm --filter @heirloom/shared test && pnpm --filter @heirloom/api test && pnpm --filter @heirloom/backup-center test",
     "db:migrate": "pnpm --filter @heirloom/api db:migrate",
     "db:deploy": "pnpm --filter @heirloom/api db:deploy",
     "db:studio": "pnpm --filter @heirloom/api db:studio",
@@ -26,7 +26,15 @@
     "backup:drill": "bash scripts/drill.sh",
     "gc": "bash scripts/gc.sh",
     "verify:loop": "bash scripts/verify-loop.sh",
-    "test:ui": "node e2e/ui-smoke.mjs"
+    "test:ui": "node e2e/ui-smoke.mjs",
+    "center": "node apps/backup-center/dist/index.js",
+    "center:build": "pnpm --filter @heirloom/backup-center build",
+    "center:test": "pnpm --filter @heirloom/backup-center test",
+    "center:daemon": "node apps/backup-center/dist/index.js daemon",
+    "center:serve": "node apps/backup-center/dist/index.js serve",
+    "center:run": "node apps/backup-center/dist/index.js run",
+    "center:onboard": "node apps/backup-center/dist/scripts/onboard.js",
+    "center:demo": "node apps/backup-center/demo/run-demo.js"
   },
   "devDependencies": {
     "playwright-core": "^1.49.0"
